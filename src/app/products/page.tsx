@@ -122,11 +122,11 @@ export default function ProductsPage() {
           </Select>
         </div>
       </div>
-      
+
       {filteredAndSortedProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredAndSortedProducts.map((product: Product) => (
-            <ProductCard key={product.id} product={product} />
+          {filteredAndSortedProducts.map((product: Product, index: number) => (
+            <ProductCard key={product.id} product={product} priority={index < 6} />
           ))}
         </div>
       ) : (

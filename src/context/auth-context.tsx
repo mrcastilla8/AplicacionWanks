@@ -2,12 +2,11 @@
 
 import type { User } from '@/types';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/lib/supabaseClient'; 
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (userData: User) => Promise<void>; 
+  login: (userData: User) => Promise<void>;
   logout: () => void;
 }
 
@@ -17,58 +16,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUserProfile = async (authUserId: string, authUserEmail?: string | null, authUserName?: string | null): Promise<Partial<User>> => {
-    if (!supabase) {
-      console.warn("Supabase client not available. Cannot fetch user profile.");
-      return { id: authUserId, email: authUserEmail, name: authUserName, phone_number: null };
-    }
-    try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, name, email, phone_number') 
-        .eq('id', authUserId)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') { 
-        console.error("Error fetching user profile from Supabase:", profileError.message);
-        return { id: authUserId, email: authUserEmail, name: authUserName, phone_number: null };
-      }
-      
-      if (profileData) {
-        return {
-          id: profileData.id, 
-          email: profileData.email || authUserEmail,
-          name: profileData.name || authUserName,
-          phone_number: profileData.phone_number,
-        };
-      } else {
-        return { id: authUserId, email: authUserEmail, name: authUserName, phone_number: null };
-      }
-
-    } catch (error) {
-      console.error("Exception while fetching user profile:", error);
-      return { id: authUserId, email: authUserEmail, name: authUserName, phone_number: null };
-    }
-  };
-
+  // Inicializar el usuario desde localStorage al cargar
   useEffect(() => {
     const initializeAuth = async () => {
       setIsLoading(true);
       try {
         const storedUserStr = localStorage.getItem('wankas-user');
         if (storedUserStr) {
-          const authInfoFromStorage: User = JSON.parse(storedUserStr);
-          const profileDetails = await fetchUserProfile(authInfoFromStorage.id, authInfoFromStorage.email, authInfoFromStorage.name);
-          setUser({
-            ...authInfoFromStorage,
-            ...profileDetails,
-          });
+          const storedUser: User = JSON.parse(storedUserStr);
+          setUser(storedUser);
         } else {
           setUser(null);
         }
       } catch (error) {
-        console.error("Failed to load user from localStorage or fetch profile", error);
-        localStorage.removeItem('wankas-user'); 
+        console.error("Failed to load user from localStorage", error);
+        localStorage.removeItem('wankas-user');
         setUser(null);
       }
       setIsLoading(false);
@@ -76,17 +38,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
   }, []);
 
-  const login = async (authData: User) => { 
+  const login = async (authData: User) => {
     setIsLoading(true);
-    const profileDetails = await fetchUserProfile(authData.id, authData.email, authData.name);
-    const completeUser: User = {
-      ...authData, 
-      name: profileDetails.name || authData.name, 
-      email: profileDetails.email || authData.email, 
-      phone_number: profileDetails.phone_number,
-    };
-    localStorage.setItem('wankas-user', JSON.stringify(completeUser));
-    setUser(completeUser); 
+    // Guardar usuario en localStorage
+    localStorage.setItem('wankas-user', JSON.stringify(authData));
+    setUser(authData);
     setIsLoading(false);
   };
 
@@ -94,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     localStorage.removeItem('wankas-user');
     if (typeof window !== 'undefined') {
-      window.location.href = '/login'; 
+      window.location.href = '/login';
     }
   };
 

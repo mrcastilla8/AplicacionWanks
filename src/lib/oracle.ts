@@ -89,8 +89,12 @@ export async function getOracleConnection() {
                 poolIncrement: 1,
             });
             console.log('✅ Pool de conexiones a Oracle creado exitosamente.');
-        } catch (err) {
-            console.error('❌ Error al crear el pool de conexiones a Oracle:', err);
+        } catch (err: any) {
+            console.error('❌ Error al crear el pool de conexiones a Oracle:');
+            console.error('Error name:', err.name);
+            console.error('Error message:', err.message);
+            console.error('Error code:', err.code);
+            console.error('Full error:', JSON.stringify(err, null, 2));
             throw err;
         }
     }
@@ -126,11 +130,14 @@ export async function executeQuery<T = any>(
     try {
         connection = await getOracleConnection();
         // Por defecto, devolver resultados como objetos (clave-valor) en lugar de arrays
-        const opts: oracledb.ExecuteOptions = {
+        const opts: any = {
             outFormat: oracledb.OUT_FORMAT_OBJECT,
             autoCommit: true,
+            // Automatically fetch CLOBs as strings instead of LOB objects
+            fetchAsString: [oracledb.CLOB, oracledb.NCLOB],
             ...options
         };
+
         const result = await connection.execute<T>(sql, binds, opts);
         return result;
     } catch (err) {
@@ -146,3 +153,4 @@ export async function executeQuery<T = any>(
         }
     }
 }
+

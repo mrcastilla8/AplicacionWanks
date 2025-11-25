@@ -19,8 +19,8 @@ interface StoreSelectorProps {
   onSelectionChange: (selection: { timeSlotId: string; pickupDate: Date } | null) => void;
 }
 
-export function StoreSelector({ 
-  selectedStoreId, 
+export function StoreSelector({
+  selectedStoreId,
   onStoreSelect,
   selectedTimeSlotId,
   onSelectionChange
@@ -59,7 +59,7 @@ export function StoreSelector({
     fetchLocations();
     fetchTimeSlots();
   }, []);
-  
+
   const displayConfig = useMemo(() => {
     if (isLoadingTimeSlots) {
       return { slots: [], message: '', baseDate: new Date() };
@@ -78,9 +78,9 @@ export function StoreSelector({
       slotTime.setHours(hours, minutes, 0, 0);
       return slotTime;
     };
-    
+
     const todaysFutureSlots = allTimeSlots.filter(slot => slot.available && parseStartTime(slot.time, now) > now);
-    
+
     let baseDate = new Date(now);
     let message = '';
     let slotsToDisplay = [...allTimeSlots];
@@ -93,16 +93,16 @@ export function StoreSelector({
     } else {
       let daysToAdd = 1;
       if (dayOfWeek === 6) {
-          daysToAdd = 2;
-          message = translations.storeSelector.slotsForMonday;
+        daysToAdd = 2;
+        message = translations.storeSelector.slotsForMonday;
       } else if (dayOfWeek === 0) {
-          daysToAdd = 1;
-          message = translations.storeSelector.slotsForMonday;
+        daysToAdd = 1;
+        message = translations.storeSelector.slotsForMonday;
       } else {
-          message = translations.storeSelector.slotsForTomorrow;
+        message = translations.storeSelector.slotsForTomorrow;
       }
       baseDate.setDate(now.getDate() + daysToAdd);
-      
+
       slotsToDisplay = slotsToDisplay.map(slot => ({ ...slot, isDisabled: !slot.available }));
     }
 
@@ -165,7 +165,7 @@ export function StoreSelector({
               {translations.checkoutPage.pickupTimeLabel}
             </Label>
             {isLoadingTimeSlots ? (
-                <Loader />
+              <Loader />
             ) : displayConfig.slots.length > 0 ? (
               <>
                 {displayConfig.message && (

@@ -26,7 +26,7 @@ const formatDate = (dateString?: string, locale: 'es' | 'en' = 'es', pattern: st
 export const BoletaTemplate: React.FC<BoletaTemplateProps> = ({ order, currentUser, translations, localeUsed }) => {
   const logoUrl = "https://rujqfdpeyoekhzesiorf.supabase.co/storage/v1/object/public/product-images/logo.jpeg";
   const orderIdShort = order.id.split('-').pop()?.toUpperCase();
-  
+
   const primaryColor = '#D4AC0D';
   const textColor = '#333333';
   const lightTextColor = '#555555';
@@ -253,16 +253,16 @@ export const BoletaTemplate: React.FC<BoletaTemplateProps> = ({ order, currentUs
           </div>
         </div>
       </div>
-      
+
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}>{translations.profilePage.boletaClientDetailsTitle}</h3>
         <div style={styles.detailGrid}>
           <span style={styles.detailLabel}>{translations.profilePage.boletaClientNameLabel}:</span>
           <span style={styles.detailValue}>{currentUser?.name || translations.profilePage.boletaClientNamePlaceholder}</span>
-          
+
           <span style={styles.detailLabel}>{translations.profilePage.boletaClientEmailLabel}:</span>
           <span style={styles.detailValue}>{currentUser?.email || translations.profilePage.boletaClientEmailPlaceholder}</span>
-          
+
           <span style={styles.detailLabel}>{translations.profilePage.boletaClientPhoneLabel}:</span>
           <span style={styles.detailValue}>{currentUser?.phone_number || translations.profilePage.boletaClientPhonePlaceholder}</span>
         </div>
@@ -271,12 +271,12 @@ export const BoletaTemplate: React.FC<BoletaTemplateProps> = ({ order, currentUs
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}>{translations.profilePage.boletaPickupLocationTitle}</h3>
         <div style={styles.detailGrid}>
-            <span style={styles.detailLabel}>{translations.profilePage.boletaStoreLabel}:</span>
-            <span style={styles.detailValue}>{order.location_name || translations.profilePage.locationNotAvailable}</span>
-            <span style={styles.detailLabel}>{translations.profilePage.boletaAddressLabel}:</span>
-            <span style={styles.detailValue}>{order.location_address || translations.profilePage.boletaPickupAddressPlaceholder}</span>
-            <span style={styles.detailLabel}>{translations.profilePage.boletaPickupDateShortLabel}:</span>
-            <span style={styles.detailValue}>{formatDate(order.pickup_date, localeUsed, 'dd/MM/yyyy HH:mm')}</span>
+          <span style={styles.detailLabel}>{translations.profilePage.boletaStoreLabel}:</span>
+          <span style={styles.detailValue}>{order.location_name || translations.profilePage.locationNotAvailable}</span>
+          <span style={styles.detailLabel}>{translations.profilePage.boletaAddressLabel}:</span>
+          <span style={styles.detailValue}>{order.location_address || translations.profilePage.boletaPickupAddressPlaceholder}</span>
+          <span style={styles.detailLabel}>{translations.profilePage.boletaPickupDateShortLabel}:</span>
+          <span style={styles.detailValue}>{formatDate(order.pickup_date, localeUsed, 'dd/MM/yyyy HH:mm')}</span>
         </div>
       </div>
 
@@ -285,23 +285,23 @@ export const BoletaTemplate: React.FC<BoletaTemplateProps> = ({ order, currentUs
         <table style={styles.table}>
           <thead>
             <tr>
-              <th style={{...styles.th, ...styles.textCenter, width: '10%'}}>{translations.profilePage.boletaQtyHeader}</th>
-              <th style={{...styles.th, width: '50%'}}>{translations.profilePage.boletaDescHeader}</th>
-              <th style={{...styles.th, ...styles.textRight, width: '20%'}}>{translations.profilePage.boletaUnitPrice}</th>
-              <th style={{...styles.th, ...styles.textRight, width: '20%'}}>{translations.common.total}</th>
+              <th style={{ ...styles.th, ...styles.textCenter, width: '10%' }}>{translations.profilePage.boletaQtyHeader}</th>
+              <th style={{ ...styles.th, width: '50%' }}>{translations.profilePage.boletaDescHeader}</th>
+              <th style={{ ...styles.th, ...styles.textRight, width: '20%' }}>{translations.profilePage.boletaUnitPrice}</th>
+              <th style={{ ...styles.th, ...styles.textRight, width: '20%' }}>{translations.common.total}</th>
             </tr>
           </thead>
           <tbody>
             {order.items.map((item, index) => (
               <tr key={`${item.product_id}-${index}`}>
-                <td style={{...styles.td, ...styles.textCenter}}>{item.quantity}</td>
+                <td style={{ ...styles.td, ...styles.textCenter }}>{item.quantity}</td>
                 <td style={styles.td}>{item.productName || 'N/A'}</td>
-                <td style={{...styles.td, ...styles.textRight}}>{translations.common.currencySymbol}{(item.price_at_purchase ?? 0).toFixed(2)}</td>
-                <td style={{...styles.td, ...styles.textRight, fontWeight: 'bold'}}>{translations.common.currencySymbol}{((item.quantity ?? 0) * (item.price_at_purchase ?? 0)).toFixed(2)}</td>
+                <td style={{ ...styles.td, ...styles.textRight }}>{translations.common.currencySymbol}{(item.price_at_purchase ?? 0).toFixed(2)}</td>
+                <td style={{ ...styles.td, ...styles.textRight, fontWeight: 'bold' }}>{translations.common.currencySymbol}{((item.quantity ?? 0) * (item.price_at_purchase ?? 0)).toFixed(2)}</td>
               </tr>
             ))}
             {Array.from({ length: Math.max(0, 3 - order.items.length) }).map((_, i) => (
-              <tr key={`empty-${i}`}><td colSpan={4} style={{...styles.td, height: '30px', borderBottom: `1px solid ${borderColor}` }}>&nbsp;</td></tr>
+              <tr key={`empty-${i}`}><td colSpan={4} style={{ ...styles.td, height: '30px', borderBottom: `1px solid ${borderColor}` }}>&nbsp;</td></tr>
             ))}
           </tbody>
         </table>
@@ -309,15 +309,15 @@ export const BoletaTemplate: React.FC<BoletaTemplateProps> = ({ order, currentUs
 
       <div style={styles.totalsSection}>
         <div style={styles.totalRow}>
-            <span>{translations.common.subtotal}:</span>
-            <span>{translations.common.currencySymbol}{(order.total_price ?? 0).toFixed(2)}</span>
+          <span>{translations.common.subtotal}:</span>
+          <span>{translations.common.currencySymbol}{(order.total_price ?? 0).toFixed(2)}</span>
         </div>
         <div style={styles.grandTotalRow}>
-            <span>{translations.profilePage.boletaTotalToPayLabel}:</span>
-            <span>{translations.common.currencySymbol}{(order.total_price ?? 0).toFixed(2)}</span>
+          <span>{translations.profilePage.boletaTotalToPayLabel}:</span>
+          <span>{translations.common.currencySymbol}{(order.total_price ?? 0).toFixed(2)}</span>
         </div>
       </div>
-      
+
       <div style={styles.footer}>
         <p>{translations.profilePage.boletaFooterThanks}</p>
         <p>{translations.profilePage.boletaFooterDisclaimer}</p>

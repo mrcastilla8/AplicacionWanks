@@ -21,6 +21,7 @@ export default function HomePage() {
               data-ai-hint="logo brand"
               width={600}
               height={400}
+              style={{ width: '100%', height: 'auto' }}
               className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last animate-fadeIn shadow-lg"
               priority
             />
@@ -83,7 +84,7 @@ export default function HomePage() {
 }
 
 interface FeatureCardProps {
-  icon: React.ReactNode;
+  icon: React.ReactElement<{ className?: string }>;
   title: string;
   description: string;
 }
@@ -92,7 +93,7 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
     <div className="group flex flex-col items-center text-center p-6 rounded-xl bg-card shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1">
       <div className="mb-4 rounded-full bg-accent/10 p-3 group-hover:bg-accent transition-colors">
-        {React.cloneElement(icon as React.ReactElement, { className: "h-8 w-8 text-accent group-hover:text-accent-foreground transition-colors"})}
+        {React.cloneElement(icon, { className: "h-8 w-8 text-accent group-hover:text-accent-foreground transition-colors" } as any)}
       </div>
       <h3 className="font-headline text-xl font-bold text-foreground mb-2">{title}</h3>
       <p className="text-sm text-muted-foreground font-body">{description}</p>

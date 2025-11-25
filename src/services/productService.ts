@@ -1,15 +1,27 @@
 import type { Product } from '@/types';
 import { products as localProducts } from '@/data/products';
-import { getProductsFromOracle } from '@/actions/productActions';
 
 export async function getProducts(): Promise<Product[]> {
-  await new Promise(resolve => setTimeout(resolve, 500));
-
   try {
-    console.log('📦 Obteniendo productos desde Oracle Cloud...');
-    const productsFromOracle = await getProductsFromOracle();
+    console.log('📦 Obteniendo productos desde Oracle Cloud (API)...');
 
-    if (productsFromOracle && productsFromOracle.length > 0) {
+    // Build the full URL for client-side fetching
+    const baseUrl = typeof window !== 'undefined'
+      ? window.location.origin
+      : 'http://localhost:3000';
+
+    const response = await fetch(`${baseUrl}/api/products`, {
+      cache: 'no-store', // Siempre obtener datos frescos
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const productsFromOracle = await response.json();
+
+    if (Array.isArray(productsFromOracle) && productsFromOracle.length > 0) {
+      console.log(`✅ ${productsFromOracle.length} productos cargados desde Oracle`);
       return productsFromOracle;
     }
 
@@ -22,4 +34,3 @@ export async function getProducts(): Promise<Product[]> {
     return localProducts;
   }
 }
-

@@ -12,9 +12,10 @@ import { useLocale } from '@/context/locale-context';
 
 interface ProductCardProps {
   product: Product;
+  priority?: boolean;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addToCart } = useCart();
   const { translations } = useLocale();
   const [quantity, setQuantity] = useState('1');
@@ -25,7 +26,7 @@ export function ProductCard({ product }: ProductCardProps) {
     addToCart(product, numQuantity);
     setQuantity('1');
   };
-  
+
   const handleQuantityChange = (value: string) => {
     setQuantity(value);
   };
@@ -37,10 +38,10 @@ export function ProductCard({ product }: ProductCardProps) {
     } else if (num > product.stock) {
       setQuantity(String(product.stock));
     } else {
-        setQuantity(String(num));
+      setQuantity(String(num));
     }
   };
-  
+
   const numForValidation = parseFloat(quantity);
   const isInvalidQuantity = isNaN(numForValidation) || numForValidation < 1 || !Number.isInteger(numForValidation) || numForValidation > product.stock;
   const isAddToCartDisabled = product.stock <= 0 || isInvalidQuantity;
@@ -54,9 +55,10 @@ export function ProductCard({ product }: ProductCardProps) {
             src={product.imageUrl || 'https://placehold.co/600x400.png'}
             alt={product.name}
             data-ai-hint="product item merchandise"
-            layout="fill"
-            objectFit="cover"
-            className="transition-transform duration-500 ease-in-out hover:scale-105"
+            fill
+            priority={priority}
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition-transform duration-500 ease-in-out hover:scale-105"
           />
         </div>
       </CardHeader>
@@ -66,11 +68,11 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.description}
         </CardDescription>
         <div className="mt-auto">
-            <p className="text-lg font-semibold text-primary">
+          <p className="text-lg font-semibold text-primary">
             {translations.common.currencySymbol}{product.price.toFixed(2)}
-            </p>
-            {product.stock <= 0 && <p className="text-sm text-destructive mt-1">{translations.productPage.outOfStock}</p>}
-            {product.stock > 0 && product.stock < 10 && <p className="text-sm text-yellow-600 mt-1">{translations.productPage.onlyLeft.replace('{stock}', product.stock.toString())}</p>}
+          </p>
+          {product.stock <= 0 && <p className="text-sm text-destructive mt-1">{translations.productPage.outOfStock}</p>}
+          {product.stock > 0 && product.stock < 10 && <p className="text-sm text-yellow-600 mt-1">{translations.productPage.onlyLeft.replace('{stock}', product.stock.toString())}</p>}
         </div>
       </CardContent>
       <CardFooter className="p-4 border-t bg-card">
