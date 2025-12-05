@@ -227,6 +227,9 @@ export const BoletaTemplate: React.FC<BoletaTemplateProps> = ({ order, currentUs
     },
   };
 
+  const itemsSubtotal = order.items.reduce((sum, item) => sum + ((item.quantity ?? 0) * (item.price_at_purchase ?? 0)), 0);
+  const discountAmount = Math.max(0, itemsSubtotal - (order.total_price ?? 0));
+
   return (
     <div style={styles.boletaContainer}>
       <div style={styles.notPaidStamp}>{translations.profilePage.boletaStatusNotPaid}</div>
@@ -310,8 +313,14 @@ export const BoletaTemplate: React.FC<BoletaTemplateProps> = ({ order, currentUs
       <div style={styles.totalsSection}>
         <div style={styles.totalRow}>
           <span>{translations.common.subtotal}:</span>
-          <span>{translations.common.currencySymbol}{(order.total_price ?? 0).toFixed(2)}</span>
+          <span>{translations.common.currencySymbol}{itemsSubtotal.toFixed(2)}</span>
         </div>
+        {discountAmount > 0.01 && (
+          <div style={{ ...styles.totalRow, color: 'green' }}>
+            <span>Descuento:</span>
+            <span>- {translations.common.currencySymbol}{discountAmount.toFixed(2)}</span>
+          </div>
+        )}
         <div style={styles.grandTotalRow}>
           <span>{translations.profilePage.boletaTotalToPayLabel}:</span>
           <span>{translations.common.currencySymbol}{(order.total_price ?? 0).toFixed(2)}</span>

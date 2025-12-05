@@ -31,6 +31,7 @@ export async function GET(request: Request) {
                 // Fetch order items with product images
                 const itemsResult = await executeQuery<any>(
                     `SELECT dp.PEDIDO_ID, dp.PRODUCTO_ID, dp.VARIANTE_ID, dp.CANTIDAD, dp.PRECIO_UNITARIO,
+                            COALESCE(vp.PRECIO_SOBRESCRITO, p.PRECIO) as PRECIO_ORIGINAL,
                             TO_CHAR(p.NOMBRE_ES) || (CASE WHEN vp.NOMBRE_ES IS NOT NULL THEN ' ' || TO_CHAR(vp.NOMBRE_ES) ELSE '' END) as PRODUCT_NAME,
                             (SELECT ma.URL 
                              FROM APP_OWNER.MEDIO_PRODUCTO mp
@@ -59,7 +60,8 @@ export async function GET(request: Request) {
                     order_id: item.PEDIDO_ID?.toString() || '',
                     product_id: item.PRODUCTO_ID?.toString() || item.VARIANTE_ID?.toString() || '',
                     quantity: item.CANTIDAD || 0,
-                    price_at_purchase: item.PRECIO_UNITARIO || 0,
+                    price_at_purchase: item.PRECIO_ORIGINAL || item.PRECIO_UNITARIO || 0, // Using original list price for display
+                    paid_price: item.PRECIO_UNITARIO || 0,
                     productName: item.PRODUCT_NAME || 'Unknown Product',
                     productImageUrl: item.PRODUCT_IMAGE || ''
                 }));
@@ -130,11 +132,55 @@ export async function POST(request: Request) {
         console.log('📦 Order created with ID:', orderId);
         console.log('📋 Cart items received:', JSON.stringify(cartItems, null, 2));
 
+        // 1.5 Redeem Coupon if present
+        const cartId = orderData.cart_id;
+        if (cartId) {
+            console.log(`🎟️ Checking for coupon on cart ${cartId}...`);
+            try {
+                await executeQuery(`
+                    DECLARE
+                    v_cupon_id NUMBER;
+                    BEGIN
+                    SELECT cupon_id INTO v_cupon_id FROM APP_OWNER.CARRITOS WHERE id = :p_cart_id;
+                    IF v_cupon_id IS NOT NULL THEN
+                        INSERT INTO APP_OWNER.REDENCIONES_CUPONES (USUARIO_ID, PEDIDO_ID, CUPON_ID, REDIMIDO_EN)
+                        VALUES (:p_user_id, :p_order_id, v_cupon_id, SYSTIMESTAMP);
+
+                        -- Mark cart as closed
+                        UPDATE APP_OWNER.CARRITOS SET CUPON_ID = NULL, ESTADO = 'cerrado', ACTUALIZADO_EN = SYSTIMESTAMP 
+                        WHERE ID = :p_cart_id;
+                    END IF;
+                    EXCEPTION
+                    WHEN OTHERS THEN NULL; -- Fail silently to ensure order is not rolled back if coupon fails? Or log?
+                    END;
+                `, { p_cart_id: cartId, p_user_id: userId, p_order_id: orderId });
+                console.log('  ✅ Coupon process handled');
+            } catch (cErr) {
+                console.warn("  ⚠️ Failed to redeem coupon:", cErr);
+            }
+        }
+
         // 2. Insert Items and Update Stock
+        // Calculate discount factor to apply to unit prices
+        // ensuring the DB trigger sums them up to the target discounted total
+        const originalCartTotal = cartItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+        const targetTotal = typeof orderData.total_price === 'number' ? orderData.total_price : parseFloat(orderData.total_price);
+
+        let discountFactor = 1;
+        if (originalCartTotal > 0 && targetTotal < originalCartTotal) {
+            discountFactor = targetTotal / originalCartTotal;
+        }
+
+        console.log(`📉 Applying discount factor: ${discountFactor} (Original: ${originalCartTotal}, Target: ${targetTotal})`);
+
         for (const item of cartItems as CartItem[]) {
             console.log('🔍 Processing item:', item.id, item.name);
             let productId: number | null = null;
             let varianteId: number | null = null;
+
+            // Calculate net price for this item
+            const originalPrice = item.price;
+            const netPrice = originalPrice * discountFactor;
 
             if (item.id.startsWith('v_')) {
                 varianteId = parseInt(item.id.substring(2));
@@ -159,7 +205,7 @@ export async function POST(request: Request) {
             }
 
             // Insert Detail
-            console.log('  💾 Inserting order detail:', { orderId, productId, varianteId, quantity: item.quantity, price: item.price });
+            console.log('  💾 Inserting order detail:', { orderId, productId, varianteId, quantity: item.quantity, price: netPrice });
             await executeQuery(
                 `INSERT INTO APP_OWNER.DETALLE_PEDIDOS (PEDIDO_ID, PRODUCTO_ID, VARIANTE_ID, CANTIDAD, PRECIO_UNITARIO)
                  VALUES (:p_order_id, :p_product_id, :p_variant_id, :p_quantity, :p_price)`,
@@ -168,7 +214,7 @@ export async function POST(request: Request) {
                     p_product_id: productId,
                     p_variant_id: varianteId,
                     p_quantity: item.quantity,
-                    p_price: item.price
+                    p_price: netPrice // Use calculated net price
                 }
             );
             console.log('  ✅ Order detail inserted successfully');

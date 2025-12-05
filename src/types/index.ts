@@ -16,13 +16,13 @@ export interface NavItem {
 }
 
 export interface Product {
-  id: string; 
-  name: string; 
-  description: string; 
-  price: number; 
-  imageUrl: string; 
-  category: string; 
-  stock: number; 
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+  stock: number;
 }
 
 export interface CartItem extends Product {
@@ -30,12 +30,12 @@ export interface CartItem extends Product {
 }
 
 export interface StoreLocation {
-  id: string; 
-  name: string; 
-  address: string; 
-  operatingHours: string; 
-  latitude?: number | null; 
-  longitude?: number | null; 
+  id: string;
+  name: string;
+  address: string;
+  operatingHours: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface TimeSlot {
@@ -45,10 +45,10 @@ export interface TimeSlot {
 }
 
 export interface User {
-  id: string; 
-  email?: string | null; 
-  name?: string | null; 
-  phone_number?: string | null; 
+  id: string;
+  email?: string | null;
+  name?: string | null;
+  phone_number?: string | null;
 }
 
 export interface IdentifiedItem {
@@ -74,32 +74,33 @@ export interface IngredientActionItem {
 
 
 export interface Order {
-  id: string; 
-  user_id: string; 
-  location_id: string; 
-  order_date?: string; 
-  pickup_date: string; 
-  status?: string; 
-  total_price: number; 
-  notes?: string | null; 
-  created_at?: string; 
-  updated_at?: string; 
+  id: string;
+  user_id: string;
+  location_id: string;
+  order_date?: string;
+  pickup_date: string;
+  status?: string;
+  total_price: number;
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  cart_id?: number; // For linking with DB cart/coupon
 }
 
 export interface OrderItem {
-  order_id: string; 
-  product_id: string; 
-  quantity: number; 
-  price_at_purchase: number; 
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  price_at_purchase: number;
 }
 
 export interface EnrichedOrderItem extends OrderItem {
-  productName?: string; 
-  productImageUrl?: string; 
+  productName?: string;
+  productImageUrl?: string;
 }
 
 export interface EnrichedOrder extends Order {
   items: EnrichedOrderItem[];
-  location_name?: string; 
+  location_name?: string;
   location_address?: string;
 }

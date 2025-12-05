@@ -128,6 +128,24 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/api/cart/sync/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/cart/sync">> = Specific
+  const handler = {} as typeof import("../../src/app/api/cart/sync/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/coupon/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/coupon">> = Specific
+  const handler = {} as typeof import("../../src/app/api/coupon/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/locations/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/locations">> = Specific
