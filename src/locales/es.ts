@@ -12,6 +12,7 @@ export const es: Translations = {
     login: 'Ingresar',
     register: 'Registrarse',
     logout: 'Cerrar Sesión',
+    wishlist: 'Lista de Deseos',
   },
   buttons: {
     addToCart: "Añadir al Carrito",
@@ -273,7 +274,7 @@ export const es: Translations = {
     loadingOrders: "Cargando tus pedidos...",
     errorLoadingOrders: "No se pudo cargar tu historial de pedidos. Por favor, inténtalo más tarde.",
     orderIdLabel: "Pedido N°",
-    orderIdLabelNumber: "Pedido N°:", 
+    orderIdLabelNumber: "Pedido N°:",
     placedOnLabel: "Realizado el:",
     statusLabel: "Estado:",
     statusUnknown: "Desconocido",

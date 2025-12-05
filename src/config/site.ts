@@ -1,7 +1,7 @@
 import type { NavItem } from '@/types';
-import { Package, Home, ShoppingCart, User, UploadCloud } from 'lucide-react';
+import { Package, Home, ShoppingCart, User, UploadCloud, Heart } from 'lucide-react';
 
-export const FALLBACK_SITE_TITLE = "Wanka's Compras Inteligentes"; 
+export const FALLBACK_SITE_TITLE = "Wanka's Compras Inteligentes";
 
 export const mainNav: NavItem[] = [
   {
@@ -43,5 +43,11 @@ export const userNav: NavItem[] = [
     titleKey: 'register',
     href: '/register',
     hideWhenAuthed: true,
+  },
+  {
+    titleKey: 'wishlist',
+    href: '/wishlist',
+    icon: Heart,
+    authRequired: true,
   },
 ];

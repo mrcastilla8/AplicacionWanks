@@ -5,10 +5,12 @@ import type { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCart } from '@/context/cart-context';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Heart } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from './ui/input';
 import { useLocale } from '@/context/locale-context';
+import { useWishlist } from '@/context/wishlist-context';
+import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
@@ -18,7 +20,18 @@ interface ProductCardProps {
 export function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addToCart } = useCart();
   const { translations } = useLocale();
+  const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const [quantity, setQuantity] = useState('1');
+
+  const inWishlist = isInWishlist(parseInt(product.id));
+
+  const toggleWishlist = async () => {
+    if (inWishlist) {
+      await removeFromWishlist(parseInt(product.id));
+    } else {
+      await addToWishlist(product);
+    }
+  };
 
   const handleAddToCart = () => {
     if (isAddToCartDisabled) return;
@@ -60,6 +73,16 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover transition-transform duration-500 ease-in-out hover:scale-105"
           />
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              toggleWishlist();
+            }}
+            className="absolute top-2 right-2 p-2 rounded-full bg-background/80 hover:bg-background text-foreground transition-colors z-10"
+            aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            <Heart className={cn("h-5 w-5 transition-colors", inWishlist ? "fill-red-500 text-red-500" : "text-foreground")} />
+          </button>
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-grow flex flex-col">

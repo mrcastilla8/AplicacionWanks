@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/auth-context';
 import { CartProvider } from '@/context/cart-context';
 import { LocaleProvider } from '@/context/locale-context';
+import { WishlistProvider } from '@/context/wishlist-context';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { es as esTranslations } from '@/locales/es';
@@ -30,12 +31,14 @@ export default function RootLayout({
         <AuthProvider>
           <LocaleProvider>
             <CartProvider>
-              <Header />
-              <main className="flex-grow container py-8">
-                {children}
-              </main>
-              <Footer />
-              <Toaster />
+              <WishlistProvider>
+                <Header />
+                <main className="flex-grow container py-8">
+                  {children}
+                </main>
+                <Footer />
+                <Toaster />
+              </WishlistProvider>
             </CartProvider>
           </LocaleProvider>
         </AuthProvider>

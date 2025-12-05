@@ -10,6 +10,7 @@ export const en = {
     login: 'Login',
     register: 'Register',
     logout: 'Logout',
+    wishlist: 'Wishlist',
   },
   buttons: {
     addToCart: "Add to Cart",
@@ -271,7 +272,7 @@ export const en = {
     loadingOrders: "Loading your orders...",
     errorLoadingOrders: "Could not load your order history. Please try again later.",
     orderIdLabel: "Order #",
-    orderIdLabelNumber: "Order #", 
+    orderIdLabelNumber: "Order #",
     placedOnLabel: "Placed on:",
     statusLabel: "Status:",
     statusUnknown: "Unknown",

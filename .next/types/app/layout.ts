@@ -1,4 +1,4 @@
-// File: C:\Users\axela\OneDrive\Escritorio\chino\AplicacionWanks\src\app\layout.tsx
+// File: C:\Users\USUARIO\Desktop\PROYECTO_OFICIAL_BD2\AplicacionWanks\src\app\layout.tsx
 import * as entry from '../../../src/app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

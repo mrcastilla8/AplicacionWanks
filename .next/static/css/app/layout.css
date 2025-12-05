@@ -1530,6 +1530,9 @@ video {
 .fill-current {
   fill: currentColor;
 }
+.fill-red-500 {
+  fill: #ef4444;
+}
 .object-cover {
   object-fit: cover;
 }
@@ -1804,6 +1807,10 @@ video {
 }
 .text-primary-foreground {
   color: hsl(var(--primary-foreground));
+}
+.text-red-500 {
+  --tw-text-opacity: 1;
+  color: rgb(239 68 68 / var(--tw-text-opacity, 1));
 }
 .text-secondary-foreground {
   color: hsl(var(--secondary-foreground));
@@ -2130,6 +2137,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 .hover\:bg-accent:hover {
   background-color: hsl(var(--accent));
+}
+.hover\:bg-background:hover {
+  background-color: hsl(var(--background));
 }
 .hover\:bg-destructive\/10:hover {
   background-color: hsl(var(--destructive) / 0.1);

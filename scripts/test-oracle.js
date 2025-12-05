@@ -101,7 +101,7 @@ async function testConnection() {
       password: password,
       connectString: connectString,
       walletLocation: absWalletDir,
-      walletPassword: '',
+      walletPassword: password,
     });
 
     console.log('✅ ¡CONEXIÓN EXITOSA!');

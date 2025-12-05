@@ -1,4 +1,4 @@
-// File: C:\Users\axela\OneDrive\Escritorio\chino\AplicacionWanks\src\app\api\products\route.ts
+// File: C:\Users\USUARIO\Desktop\PROYECTO_OFICIAL_BD2\AplicacionWanks\src\app\api\products\route.ts
 import * as entry from '../../../../../src/app/api/products/route.js'
 import type { NextRequest } from 'next/server.js'
 
