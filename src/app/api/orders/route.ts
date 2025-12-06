@@ -174,35 +174,33 @@ export async function POST(request: Request) {
         console.log(`📉 Applying discount factor: ${discountFactor} (Original: ${originalCartTotal}, Target: ${targetTotal})`);
 
         for (const item of cartItems as CartItem[]) {
-            console.log('🔍 Processing item:', item.id, item.name);
-            let productId: number | null = null;
-            let varianteId: number | null = null;
+            console.log('🔍 Processing item:', item.variantId, item.name);
 
             // Calculate net price for this item
             const originalPrice = item.price;
             const netPrice = originalPrice * discountFactor;
 
-            if (item.id.startsWith('v_')) {
-                varianteId = parseInt(item.id.substring(2));
-                console.log('  ✓ Variant ID:', varianteId);
-                // Get Product ID for this variant
+            // Get Product ID from the cart item or look it up from the variant
+            let productId: number | null = null;
+            const varianteId = parseInt(item.variantId);
+
+            if (item.productId) {
+                productId = parseInt(item.productId);
+            } else if (varianteId) {
+                // Fallback: Get Product ID for this variant from DB
                 const varResult = await executeQuery<{ PRODUCTO_ID: number }>(
                     `SELECT PRODUCTO_ID FROM APP_OWNER.VARIANTES_PRODUCTO WHERE ID = :p_variant_id`,
                     { p_variant_id: varianteId }
                 );
                 if (varResult.rows && varResult.rows.length > 0) {
                     productId = varResult.rows[0].PRODUCTO_ID;
-                    console.log('  ✓ Product ID from variant:', productId);
+                    console.log('  ✓ Product ID from variant lookup:', productId);
                 } else {
                     console.warn('  ⚠️ No product found for variant:', varianteId);
                 }
-            } else if (item.id.startsWith('p_')) {
-                productId = parseInt(item.id.substring(2));
-                console.log('  ✓ Product ID:', productId);
-            } else {
-                console.error('  ❌ Invalid item ID format:', item.id);
-                continue;
             }
+
+            console.log('  ✓ Variant ID:', varianteId, ', Product ID:', productId);
 
             // Insert Detail
             console.log('  💾 Inserting order detail:', { orderId, productId, varianteId, quantity: item.quantity, price: netPrice });
@@ -219,7 +217,7 @@ export async function POST(request: Request) {
             );
             console.log('  ✅ Order detail inserted successfully');
 
-            // Update Stock (only if variant exists)
+            // Update Stock (always update since we always have a variant now)
             if (varianteId) {
                 console.log('  📉 Updating stock for variant:', varianteId);
                 await executeQuery(

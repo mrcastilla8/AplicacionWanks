@@ -40,7 +40,7 @@ export async function createToken(payload: SessionPayload): Promise<string> {
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
     try {
         const verified = await jwtVerify(token, JWT_SECRET);
-        return verified.payload as SessionPayload;
+        return verified.payload as unknown as SessionPayload;
     } catch (error) {
         console.error('Error verificando token:', error);
         return null;

@@ -342,6 +342,11 @@ export const en = {
     noAvailableTimeSlots: "No time slots available for the selected store.",
     slotsForTomorrow: "Note: These time slots are for tomorrow.",
     slotsForMonday: "Note: These time slots are for next Monday."
+  },
+  variantSelector: {
+    selectVariant: "Select a variant",
+    inStock: "available",
+    viewOptions: "View options"
   }
 };
 

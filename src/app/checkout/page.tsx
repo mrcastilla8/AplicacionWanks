@@ -274,7 +274,7 @@ export default function CheckoutPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {cartItems.map(item => (
-              <div key={item.id} className="flex justify-between items-center text-sm">
+              <div key={item.variantId} className="flex justify-between items-center text-sm">
                 <span className="truncate max-w-[150px]" title={item.name}>{item.name} (x{item.quantity})</span>
                 <span>{translations.common.currencySymbol}{(item.price * item.quantity).toFixed(2)}</span>
               </div>

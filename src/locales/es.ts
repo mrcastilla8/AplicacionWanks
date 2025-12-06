@@ -344,5 +344,10 @@ export const es: Translations = {
     noAvailableTimeSlots: "No hay horarios disponibles para la tienda seleccionada.",
     slotsForTomorrow: "Nota: Estos horarios son para mañana.",
     slotsForMonday: "Nota: Estos horarios son para el próximo Lunes."
+  },
+  variantSelector: {
+    selectVariant: "Selecciona una presentación",
+    inStock: "disponibles",
+    viewOptions: "Ver opciones"
   }
 };

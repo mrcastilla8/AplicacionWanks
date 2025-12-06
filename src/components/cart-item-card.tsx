@@ -26,13 +26,10 @@ export function CartItemCard({ item }: CartItemCardProps) {
     const num = parseFloat(inputValue);
 
     if (isNaN(num) || num < 1) {
-      removeFromCart(item.id);
+      removeFromCart(item.variantId);
     } else {
-      let finalQuantity = Math.floor(num);
-      if (item.stock > 0 && finalQuantity > item.stock) {
-        finalQuantity = item.stock;
-      }
-      updateQuantity(item.id, finalQuantity);
+      const finalQuantity = Math.floor(num);
+      updateQuantity(item.variantId, finalQuantity);
     }
   };
 
@@ -44,9 +41,9 @@ export function CartItemCard({ item }: CartItemCardProps) {
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border rounded-lg shadow-sm bg-card hover:shadow-md transition-shadow">
       <div className="flex items-center gap-4 w-full sm:w-auto sm:flex-grow">
         <div className="relative w-20 h-20 rounded-md overflow-hidden shrink-0">
-          <Image 
-            src={item.imageUrl || 'https://placehold.co/80x80.png'} 
-            alt={translations.common.productImageAlt.replace('{itemName}', item.name)} 
+          <Image
+            src={item.imageUrl || 'https://placehold.co/80x80.png'}
+            alt={translations.common.productImageAlt.replace('{itemName}', item.name)}
             width={80}
             height={80}
             className="object-cover"
@@ -71,16 +68,15 @@ export function CartItemCard({ item }: CartItemCardProps) {
             onChange={handleChange}
             onBlur={handleBlur}
             min="1"
-            max={item.stock > 0 ? item.stock : 1}
             className="w-20 h-9 text-center"
             aria-label={translations.common.quantityFor.replace('{itemName}', item.name)}
           />
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => removeFromCart(item.id)} 
-          className="text-destructive hover:bg-destructive/10 shrink-0" 
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => removeFromCart(item.variantId)}
+          className="text-destructive hover:bg-destructive/10 shrink-0"
           aria-label={translations.common.removeLabel.replace('{itemName}', item.name)}
         >
           <X className="h-5 w-5" />

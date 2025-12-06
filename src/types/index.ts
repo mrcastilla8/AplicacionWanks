@@ -25,7 +25,30 @@ export interface Product {
   stock: number;
 }
 
-export interface CartItem extends Product {
+// New variant-related types
+export interface ProductVariant {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+}
+
+export interface ProductWithVariants {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  category: string;
+  variants: ProductVariant[];
+}
+
+export interface CartItem {
+  productId: string;
+  variantId: string;
+  name: string;           // Combined name: "Product - Variant"
+  variantName: string;    // Just the variant name
+  price: number;
+  imageUrl: string;
   quantity: number;
 }
 

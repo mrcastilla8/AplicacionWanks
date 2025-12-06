@@ -1,67 +1,66 @@
 'use client';
 
 import Image from 'next/image';
-import type { Product } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCart } from '@/context/cart-context';
-import { PlusCircle, Heart } from 'lucide-react';
-import { useState } from 'react';
-import { Input } from './ui/input';
+import type { ProductWithVariants } from '@/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Heart, Eye } from 'lucide-react';
 import { useLocale } from '@/context/locale-context';
 import { useWishlist } from '@/context/wishlist-context';
 import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
-  product: Product;
+  product: ProductWithVariants;
   priority?: boolean;
+  onSelect: (product: ProductWithVariants) => void;
 }
 
-export function ProductCard({ product, priority = false }: ProductCardProps) {
-  const { addToCart } = useCart();
+export function ProductCard({ product, priority = false, onSelect }: ProductCardProps) {
   const { translations } = useLocale();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
-  const [quantity, setQuantity] = useState('1');
 
   const inWishlist = isInWishlist(parseInt(product.id));
 
-  const toggleWishlist = async () => {
+  const toggleWishlist = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (inWishlist) {
       await removeFromWishlist(parseInt(product.id));
     } else {
-      await addToWishlist(product);
+      // Create a compatible object for the wishlist
+      const wishlistProduct = {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.variants[0]?.price || 0,
+        imageUrl: product.imageUrl,
+        category: product.category,
+        stock: product.variants.reduce((sum, v) => sum + v.stock, 0)
+      };
+      await addToWishlist(wishlistProduct);
     }
   };
 
-  const handleAddToCart = () => {
-    if (isAddToCartDisabled) return;
-    const numQuantity = Math.floor(parseFloat(quantity));
-    addToCart(product, numQuantity);
-    setQuantity('1');
+  // Calculate total stock across all variants
+  const totalStock = product.variants.reduce((sum, v) => sum + v.stock, 0);
+  const hasAnyStock = totalStock > 0;
+
+  // Get min price from variants
+  const minPrice = Math.min(...product.variants.map(v => v.price));
+  const maxPrice = Math.max(...product.variants.map(v => v.price));
+  const hasMultiplePrices = minPrice !== maxPrice;
+
+  const handleCardClick = () => {
+    onSelect(product);
   };
-
-  const handleQuantityChange = (value: string) => {
-    setQuantity(value);
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const num = Math.floor(parseFloat(e.target.value));
-    if (isNaN(num) || num < 1) {
-      setQuantity('1');
-    } else if (num > product.stock) {
-      setQuantity(String(product.stock));
-    } else {
-      setQuantity(String(num));
-    }
-  };
-
-  const numForValidation = parseFloat(quantity);
-  const isInvalidQuantity = isNaN(numForValidation) || numForValidation < 1 || !Number.isInteger(numForValidation) || numForValidation > product.stock;
-  const isAddToCartDisabled = product.stock <= 0 || isInvalidQuantity;
-
 
   return (
-    <Card className="flex flex-col overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out h-full">
+    <Card
+      className={cn(
+        "flex flex-col overflow-hidden rounded-lg shadow-lg transition-all duration-300 ease-in-out h-full cursor-pointer group",
+        "hover:shadow-xl hover:scale-[1.02] hover:border-primary/50",
+        !hasAnyStock && "opacity-70"
+      )}
+      onClick={handleCardClick}
+    >
       <CardHeader className="p-0">
         <div className="aspect-video relative w-full overflow-hidden">
           <Image
@@ -71,56 +70,59 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             fill
             priority={priority}
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover transition-transform duration-500 ease-in-out hover:scale-105"
+            className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
           />
+          {/* Wishlist button */}
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              toggleWishlist();
-            }}
+            onClick={toggleWishlist}
             className="absolute top-2 right-2 p-2 rounded-full bg-background/80 hover:bg-background text-foreground transition-colors z-10"
             aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
           >
             <Heart className={cn("h-5 w-5 transition-colors", inWishlist ? "fill-red-500 text-red-500" : "text-foreground")} />
           </button>
+
+          {/* View options overlay */}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 text-foreground font-medium">
+              <Eye className="h-4 w-4" />
+              {translations.variantSelector?.viewOptions || 'Ver opciones'}
+            </div>
+          </div>
+
+          {/* Out of stock badge */}
+          {!hasAnyStock && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <span className="bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-sm font-medium">
+                {translations.productPage.outOfStock}
+              </span>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-grow flex flex-col">
-        <CardTitle className="font-headline text-xl mb-1 truncate" title={product.name}>{product.name}</CardTitle>
+        <CardTitle className="font-headline text-xl mb-1 truncate" title={product.name}>
+          {product.name}
+        </CardTitle>
         <CardDescription className="text-sm text-muted-foreground mb-2 h-10 overflow-hidden text-ellipsis line-clamp-2">
-          {product.description}
+          {product.description || `${product.variants.length} presentaciones disponibles`}
         </CardDescription>
-        <div className="mt-auto">
-          <p className="text-lg font-semibold text-primary">
-            {translations.common.currencySymbol}{product.price.toFixed(2)}
-          </p>
-          {product.stock <= 0 && <p className="text-sm text-destructive mt-1">{translations.productPage.outOfStock}</p>}
-          {product.stock > 0 && product.stock < 10 && <p className="text-sm text-yellow-600 mt-1">{translations.productPage.onlyLeft.replace('{stock}', product.stock.toString())}</p>}
+        <div className="mt-auto flex items-center justify-between">
+          <div>
+            {hasMultiplePrices ? (
+              <p className="text-lg font-semibold text-primary">
+                Desde {translations.common.currencySymbol}{minPrice.toFixed(2)}
+              </p>
+            ) : (
+              <p className="text-lg font-semibold text-primary">
+                {translations.common.currencySymbol}{minPrice.toFixed(2)}
+              </p>
+            )}
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {product.variants.length} {product.variants.length === 1 ? 'opción' : 'opciones'}
+          </span>
         </div>
       </CardContent>
-      <CardFooter className="p-4 border-t bg-card">
-        <div className="flex items-center gap-2 w-full">
-          <Input
-            type="number"
-            value={quantity}
-            onChange={(e) => handleQuantityChange(e.target.value)}
-            onBlur={handleBlur}
-            min="1"
-            max={product.stock > 0 ? product.stock : 1}
-            className="w-20 h-9 text-center border-input focus:ring-primary focus:border-primary"
-            disabled={product.stock <= 0}
-            aria-label={translations.common.quantityFor.replace('{itemName}', product.name)}
-          />
-          <Button
-            onClick={handleAddToCart}
-            className="flex-grow min-w-0 transition-transform transform hover:scale-105"
-            disabled={isAddToCartDisabled}
-            aria-label={translations.productPage.ariaLabelAddToCart.replace('{productName}', product.name)}
-          >
-            <PlusCircle className="mr-2 h-5 w-5" /> {translations.buttons.addToCart}
-          </Button>
-        </div>
-      </CardFooter>
     </Card>
   );
 }

@@ -1,99 +1,98 @@
 import { NextResponse } from 'next/server';
 import { executeQuery } from '@/lib/oracle';
-import type { Product } from '@/types';
+import type { ProductWithVariants } from '@/types';
 
 interface OracleProductRow {
     PRODUCTO_ID: number;
-    VARIANTE_ID: number | null;
-    SKU: string | null;
-    NOMBRE_MOSTRADO: string;
-    PRECIO_EFECTIVO: number;
+    PRODUCTO_NOMBRE: string;
+    PRODUCTO_DESC: string | null;
     URL_PORTADA: string | null;
-    ID_CATEGORIA: number;
-    ACTIVO: string;
-    STOCK: number;
-}
-
-interface OracleCategoryRow {
-    ID: number;
-    NOMBRE_ES: string;
+    CATEGORIA_NOMBRE: string;
+    VARIANTE_ID: number;
+    VARIANTE_NOMBRE: string;
+    VARIANTE_PRECIO: number;
+    VARIANTE_STOCK: number;
 }
 
 export async function GET() {
     try {
-        console.log('🔍 Consultando productos desde Oracle Cloud...');
+        console.log('🔍 Consultando productos agrupados con variantes desde Oracle Cloud...');
 
-        // Consultar productos desde la vista del catálogo con stock
-        const productsResult = await executeQuery<OracleProductRow>(
+        // Query to get products with their variants, grouped
+        const result = await executeQuery<OracleProductRow>(
             `SELECT 
                 p.ID as PRODUCTO_ID,
-                v.ID as VARIANTE_ID,
-                v.SKU,
-                TO_CHAR(p.NOMBRE_ES) || (CASE WHEN v.NOMBRE_ES IS NOT NULL THEN ' ' || TO_CHAR(v.NOMBRE_ES) ELSE '' END) as NOMBRE_MOSTRADO,
-                NVL(v.PRECIO_SOBRESCRITO, p.PRECIO) as PRECIO_EFECTIVO,
+                TO_CHAR(p.NOMBRE_ES) as PRODUCTO_NOMBRE,
+                TO_CHAR(p.DESCRIPCION_ES) as PRODUCTO_DESC,
                 (SELECT ma.URL 
                  FROM APP_OWNER.MEDIO_PRODUCTO mp
                  JOIN APP_OWNER.MEDIO_ARCHIVO ma ON mp.MEDIO_ID = ma.ID
                  WHERE mp.PRODUCTO_ID = p.ID
-                   AND (mp.VARIANTE_ID = v.ID OR mp.VARIANTE_ID IS NULL)
+                   AND mp.VARIANTE_ID IS NULL
                    AND mp.ES_PORTADA = 'S'
-                 ORDER BY mp.VARIANTE_ID DESC NULLS LAST
                  FETCH FIRST 1 ROWS ONLY) as URL_PORTADA,
-                p.ID_CATEGORIA,
-                COALESCE(v.ACTIVO, 'S') as ACTIVO,
-                NVL(si.EXISTENCIA, 0) as STOCK
+                TO_CHAR(c.NOMBRE_ES) as CATEGORIA_NOMBRE,
+                v.ID as VARIANTE_ID,
+                NVL(TO_CHAR(v.NOMBRE_ES), 'Unidad') as VARIANTE_NOMBRE,
+                NVL(v.PRECIO_SOBRESCRITO, p.PRECIO) as VARIANTE_PRECIO,
+                NVL(si.EXISTENCIA, 0) - NVL(si.RESERVADO, 0) as VARIANTE_STOCK
             FROM APP_OWNER.PRODUCTOS p
-            LEFT JOIN APP_OWNER.VARIANTES_PRODUCTO v ON p.ID = v.PRODUCTO_ID
+            JOIN APP_OWNER.VARIANTES_PRODUCTO v ON p.ID = v.PRODUCTO_ID
+            LEFT JOIN APP_OWNER.CATEGORIAS c ON p.ID_CATEGORIA = c.ID
             LEFT JOIN APP_OWNER.SALDOS_INVENTARIO si ON v.ID = si.VARIANTE_PRODUCTO_ID
-            WHERE (v.ACTIVO = 'S' OR v.ID IS NULL)
-            ORDER BY NOMBRE_MOSTRADO ASC`
+            WHERE v.ACTIVO = 'S'
+            ORDER BY p.NOMBRE_ES, v.ID`
         );
 
         console.log('📊 Resultado de productos:', {
-            hasRows: !!productsResult.rows,
-            rowCount: productsResult.rows?.length || 0
+            hasRows: !!result.rows,
+            rowCount: result.rows?.length || 0
         });
 
-        if (!productsResult.rows || productsResult.rows.length === 0) {
+        if (!result.rows || result.rows.length === 0) {
             console.warn('⚠️ No se encontraron productos en Oracle');
             return NextResponse.json([]);
         }
 
-        // Obtener categorías para mapear IDs a nombres
-        const categoriesResult = await executeQuery<OracleCategoryRow>(
-            `SELECT ID, NOMBRE_ES FROM APP_OWNER.CATEGORIAS`
-        );
+        // Group variants by product
+        const productsMap = new Map<number, ProductWithVariants>();
 
-        console.log('📊 Resultado de categorías:', {
-            hasRows: !!categoriesResult.rows,
-            rowCount: categoriesResult.rows?.length || 0
-        });
+        for (const row of result.rows) {
+            const productId = row.PRODUCTO_ID;
 
-        const categoryMap = new Map<number, string>();
-        if (categoriesResult.rows) {
-            categoriesResult.rows.forEach((cat: OracleCategoryRow) => {
-                categoryMap.set(cat.ID, cat.NOMBRE_ES);
+            if (!productsMap.has(productId)) {
+                // Get image URL, use placeholder if not available
+                const imageUrl = row.URL_PORTADA || 'https://placehold.co/600x400.png';
+
+                // Ensure all string fields are actually strings (LOB objects need conversion)
+                const productName = row.PRODUCTO_NOMBRE ? String(row.PRODUCTO_NOMBRE) : 'Producto sin nombre';
+                const productDesc = row.PRODUCTO_DESC ? String(row.PRODUCTO_DESC) : '';
+                const categoryName = row.CATEGORIA_NOMBRE ? String(row.CATEGORIA_NOMBRE) : 'Sin categoría';
+
+                productsMap.set(productId, {
+                    id: String(productId),
+                    name: productName,
+                    description: productDesc,
+                    imageUrl: imageUrl,
+                    category: categoryName,
+                    variants: []
+                });
+            }
+
+            // Add variant to the product
+            const product = productsMap.get(productId)!;
+            const variantName = row.VARIANTE_NOMBRE ? String(row.VARIANTE_NOMBRE) : 'Unidad';
+            product.variants.push({
+                id: String(row.VARIANTE_ID),
+                name: variantName,
+                price: row.VARIANTE_PRECIO || 0,
+                stock: Math.max(0, row.VARIANTE_STOCK || 0)
             });
         }
 
-        // Transformar los resultados de Oracle al formato Product
-        const products: Product[] = productsResult.rows.map((row: OracleProductRow) => {
-            // Limpiar URL de imagen (eliminar dobles slashes excepto en protocolo)
-            const rawImageUrl = row.URL_PORTADA || 'https://placehold.co/600x400.png';
-            const imageUrl = rawImageUrl.replace(/([^:]\/)\/+/g, "$1");
+        const products = Array.from(productsMap.values());
 
-            return {
-                id: row.VARIANTE_ID ? `v_${row.VARIANTE_ID}` : `p_${row.PRODUCTO_ID}`,
-                name: row.NOMBRE_MOSTRADO || 'Producto sin nombre',
-                description: '', // La vista no incluye descripción
-                price: row.PRECIO_EFECTIVO || 0,
-                imageUrl: imageUrl,
-                category: categoryMap.get(row.ID_CATEGORIA) || 'Sin categoría',
-                stock: row.STOCK || 0,
-            };
-        });
-
-        console.log(`✅ ${products.length} productos obtenidos de Oracle Cloud`);
+        console.log(`✅ ${products.length} productos agrupados con variantes obtenidos de Oracle Cloud`);
 
         return NextResponse.json(products);
 
@@ -101,7 +100,6 @@ export async function GET() {
         console.error('❌ Error al obtener productos de Oracle:', error);
         console.error('Error message:', error.message);
         console.error('Error code:', error.code);
-        console.error('Error stack:', error.stack);
 
         return NextResponse.json({
             error: 'No se pudieron cargar los productos desde Oracle Cloud',

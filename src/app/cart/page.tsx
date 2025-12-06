@@ -36,9 +36,9 @@ export default function CartPage() {
           {translations.cartPage.yourCart.replace('{itemCount}', `${itemCount} ${itemText}`)}
         </h1>
         {cartItems.map(item => (
-          <CartItemCard key={item.id} item={item} />
+          <CartItemCard key={item.variantId} item={item} />
         ))}
-         <Button variant="outline" onClick={clearCart} className="text-destructive border-destructive hover:bg-destructive/10">
+        <Button variant="outline" onClick={clearCart} className="text-destructive border-destructive hover:bg-destructive/10">
           {translations.buttons.clearCart}
         </Button>
       </div>

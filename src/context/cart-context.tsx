@@ -1,16 +1,16 @@
 'use client';
 
-import type { CartItem, Product } from '@/types';
+import type { CartItem, ProductWithVariants, ProductVariant } from '@/types';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { useLocale } from './locale-context'; 
+import { useLocale } from './locale-context';
 
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addToCart: (product: ProductWithVariants, variant: ProductVariant, quantity?: number) => void;
+  removeFromCart: (variantId: string) => void;
+  updateQuantity: (variantId: string, quantity: number) => void;
   clearCart: () => void;
   getCartTotal: () => number;
   getItemCount: () => number;
@@ -27,13 +27,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     try {
-      const storedCart = localStorage.getItem('wankas-cart');
+      const storedCart = localStorage.getItem('wankas-cart-v2');
       if (storedCart) {
         setCartItems(JSON.parse(storedCart));
       }
     } catch (error) {
       console.error("Failed to load cart from localStorage", error);
-      localStorage.removeItem('wankas-cart');
+      localStorage.removeItem('wankas-cart-v2');
     } finally {
       setIsCartLoaded(true);
     }
@@ -41,44 +41,53 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (isCartLoaded) {
-      localStorage.setItem('wankas-cart', JSON.stringify(cartItems));
+      localStorage.setItem('wankas-cart-v2', JSON.stringify(cartItems));
     }
   }, [cartItems, isCartLoaded]);
 
-  const addToCart = (product: Product, quantity: number = 1) => {
+  const addToCart = (product: ProductWithVariants, variant: ProductVariant, quantity: number = 1) => {
     setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
+      const existingItem = prevItems.find(item => item.variantId === variant.id);
       if (existingItem) {
         return prevItems.map(item =>
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          item.variantId === variant.id ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
-      return [...prevItems, { ...product, quantity }];
+      const newItem: CartItem = {
+        productId: product.id,
+        variantId: variant.id,
+        name: `${product.name} - ${variant.name}`,
+        variantName: variant.name,
+        price: variant.price,
+        imageUrl: product.imageUrl,
+        quantity
+      };
+      return [...prevItems, newItem];
     });
-    toast({ 
-      title: translations.myPantryPage.addedToCartTitle, 
-      description: translations.myPantryPage.addedToCartDesc.replace('{productName}', product.name) 
+    toast({
+      title: translations.myPantryPage.addedToCartTitle,
+      description: translations.myPantryPage.addedToCartDesc.replace('{productName}', `${product.name} - ${variant.name}`)
     });
   };
 
-  const removeFromCart = (productId: string) => {
-    const removedItem = cartItems.find(item => item.id === productId);
-    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+  const removeFromCart = (variantId: string) => {
+    const removedItem = cartItems.find(item => item.variantId === variantId);
+    setCartItems(prevItems => prevItems.filter(item => item.variantId !== variantId));
     if (removedItem) {
-      toast({ 
-        title: translations.myPantryPage.removedFromCartTitle, 
+      toast({
+        title: translations.myPantryPage.removedFromCartTitle,
         description: translations.myPantryPage.removedFromCartDesc
       });
     }
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (variantId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(variantId);
     } else {
       setCartItems(prevItems =>
         prevItems.map(item =>
-          item.id === productId ? { ...item, quantity } : item
+          item.variantId === variantId ? { ...item, quantity } : item
         )
       );
     }
@@ -86,8 +95,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearCart = () => {
     setCartItems([]);
-    toast({ 
-      title: translations.myPantryPage.cartClearedTitle, 
+    toast({
+      title: translations.myPantryPage.cartClearedTitle,
       description: translations.myPantryPage.cartClearedDesc
     });
   };

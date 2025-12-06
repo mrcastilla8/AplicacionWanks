@@ -1,30 +1,45 @@
 'use client';
 
 import { ProductCard } from '@/components/product-card';
-import type { Product } from '@/types';
+import { VariantSelectorModal } from '@/components/variant-selector-modal';
+import type { ProductWithVariants } from '@/types';
 import { useState, useMemo, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PackageSearch } from 'lucide-react';
 import { useLocale } from '@/context/locale-context';
 import { Loader } from '@/components/ui/loader';
-import { getProducts } from '@/services/productService';
 
 export default function ProductsPage() {
   const { translations } = useLocale();
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<ProductWithVariants[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('name-asc');
 
+  // Modal state
+  const [selectedProduct, setSelectedProduct] = useState<ProductWithVariants | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        const productsData = await getProducts();
-        const uniqueProductsByName = Array.from(new Map(productsData.map(p => [p.name, p])).values());
-        setAllProducts(uniqueProductsByName);
+        const baseUrl = typeof window !== 'undefined'
+          ? window.location.origin
+          : 'http://localhost:3000';
+
+        const response = await fetch(`${baseUrl}/api/products`, {
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const productsData: ProductWithVariants[] = await response.json();
+        setAllProducts(productsData);
       } catch (error) {
         console.error("Failed to fetch products:", error);
       } finally {
@@ -63,14 +78,34 @@ export default function ProductsPage() {
         filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
       case 'price-asc':
-        filtered.sort((a, b) => a.price - b.price);
+        // Sort by minimum price
+        filtered.sort((a, b) => {
+          const minA = Math.min(...a.variants.map(v => v.price));
+          const minB = Math.min(...b.variants.map(v => v.price));
+          return minA - minB;
+        });
         break;
       case 'price-desc':
-        filtered.sort((a, b) => b.price - a.price);
+        // Sort by maximum price
+        filtered.sort((a, b) => {
+          const maxA = Math.max(...a.variants.map(v => v.price));
+          const maxB = Math.max(...b.variants.map(v => v.price));
+          return maxB - maxA;
+        });
         break;
     }
     return filtered;
   }, [searchTerm, selectedCategory, sortBy, allProducts, isLoading]);
+
+  const handleProductSelect = (product: ProductWithVariants) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
 
   if (isLoading) {
     return (
@@ -125,8 +160,13 @@ export default function ProductsPage() {
 
       {filteredAndSortedProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredAndSortedProducts.map((product: Product, index: number) => (
-            <ProductCard key={product.id} product={product} priority={index < 6} />
+          {filteredAndSortedProducts.map((product: ProductWithVariants, index: number) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              priority={index < 6}
+              onSelect={handleProductSelect}
+            />
           ))}
         </div>
       ) : (
@@ -138,6 +178,13 @@ export default function ProductsPage() {
           </p>
         </div>
       )}
+
+      {/* Variant Selector Modal */}
+      <VariantSelectorModal
+        product={selectedProduct}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+      />
     </div>
   );
 }
