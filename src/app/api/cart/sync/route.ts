@@ -13,6 +13,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
         }
 
+        const parsedUserId = parseInt(userId);
+        if (isNaN(parsedUserId)) {
+            console.error(`❌ Invalid userId format: ${userId}`);
+            return NextResponse.json({ error: 'Invalid User ID format' }, { status: 400 });
+        }
+
         // 1. Get or Create Cart ID
         const cartResult = await executeQuery<{ p_cart_id: number }>(
             `BEGIN
@@ -25,7 +31,7 @@ export async function POST(request: NextRequest) {
                 );
              END;`,
             {
-                p_user_id: parseInt(userId),
+                p_user_id: parsedUserId,
                 p_cart_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER },
                 p_merged: { dir: oracledb.BIND_OUT, type: oracledb.STRING },
                 p_prev_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
@@ -33,7 +39,7 @@ export async function POST(request: NextRequest) {
         );
 
         const cartId = cartResult.outBinds?.p_cart_id;
-        if (!cartId) throw new Error('Failed to get cart ID');
+        if (!cartId) throw new Error('Failed to get cart ID from stored procedure');
 
         // 2. Clear existing items
         await executeQuery(
@@ -49,22 +55,38 @@ export async function POST(request: NextRequest) {
                 let productId: number | null = null;
                 let varianteId: number | null = null;
 
-                if (item.id.startsWith('v_')) {
-                    varianteId = parseInt(item.id.substring(2));
-                    // Get Product ID
-                    const varRes = await executeQuery<{ PRODUCTO_ID: number }>(
-                        `SELECT PRODUCTO_ID FROM APP_OWNER.VARIANTES_PRODUCTO WHERE ID = :vid`,
-                        { vid: varianteId }
-                    );
-                    if (varRes.rows?.[0]) productId = varRes.rows[0].PRODUCTO_ID;
-                } else if (item.id.startsWith('p_')) {
-                    productId = parseInt(item.id.substring(2));
-                } else {
-                    // Fallback for simple IDs if any
-                    productId = parseInt(item.id);
+                // CartItem has productId and variantId as strings (e.g., "v_123" or "p_456")
+                const itemVariantId = item.variantId;
+                const itemProductId = item.productId;
+
+                // Parse variantId (e.g., "v_123" -> 123)
+                if (itemVariantId && typeof itemVariantId === 'string') {
+                    if (itemVariantId.startsWith('v_')) {
+                        varianteId = parseInt(itemVariantId.substring(2));
+                    } else {
+                        varianteId = parseInt(itemVariantId);
+                    }
+
+                    // Get Product ID from variant if not provided
+                    if (varianteId && !isNaN(varianteId)) {
+                        const varRes = await executeQuery<{ PRODUCTO_ID: number }>(
+                            `SELECT PRODUCTO_ID FROM APP_OWNER.VARIANTES_PRODUCTO WHERE ID = :vid`,
+                            { vid: varianteId }
+                        );
+                        if (varRes.rows?.[0]) productId = varRes.rows[0].PRODUCTO_ID;
+                    }
                 }
 
-                if (productId) {
+                // Parse productId if not yet set (e.g., "p_456" -> 456)
+                if (!productId && itemProductId && typeof itemProductId === 'string') {
+                    if (itemProductId.startsWith('p_')) {
+                        productId = parseInt(itemProductId.substring(2));
+                    } else {
+                        productId = parseInt(itemProductId);
+                    }
+                }
+
+                if (productId && !isNaN(productId)) {
                     await executeQuery(
                         `INSERT INTO APP_OWNER.CART_ITEMS (CARRITO_ID, PRODUCTO_ID, VARIANTE_ID, CANTIDAD, PRECIO_UNITARIO_OBSERVADO)
                         VALUES (:cartId, :prodId, :varId, :qty, :price)`,
@@ -76,6 +98,8 @@ export async function POST(request: NextRequest) {
                             price: item.price
                         }
                     );
+                } else {
+                    console.warn(`⚠️ Could not parse item: productId=${itemProductId}, variantId=${itemVariantId}`);
                 }
             }
         }

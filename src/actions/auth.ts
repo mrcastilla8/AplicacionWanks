@@ -63,7 +63,7 @@ interface OracleProfileRow {
 export async function registerUser(values: z.infer<typeof RegisterSchema>): Promise<ActionResult> {
   const validatedFields = RegisterSchema.safeParse(values);
   if (!validatedFields.success) {
-    const firstError = validatedFields.error.errors[0].message;
+    const firstError = validatedFields.error.issues[0].message;
     return { error: firstError || 'Campos inválidos.' };
   }
 
@@ -157,7 +157,7 @@ export async function registerUser(values: z.infer<typeof RegisterSchema>): Prom
 export async function loginUser(values: z.infer<typeof LoginSchema>): Promise<ActionResult> {
   const validatedFields = LoginSchema.safeParse(values);
   if (!validatedFields.success) {
-    const firstError = validatedFields.error.errors[0].message;
+    const firstError = validatedFields.error.issues[0].message;
     return { error: firstError || 'Correo electrónico o contraseña inválidos.' };
   }
 
@@ -191,7 +191,12 @@ export async function loginUser(values: z.infer<typeof LoginSchema>): Promise<Ac
     }
 
     // Verificar contraseña
-    const passwordsMatch = await bcrypt.compare(password, profile.CONTRASENA_HASH);
+    // Oracle puede devolver el hash como Buffer u objeto, convertir a string
+    const hashString = typeof profile.CONTRASENA_HASH === 'string'
+      ? profile.CONTRASENA_HASH
+      : String(profile.CONTRASENA_HASH);
+
+    const passwordsMatch = await bcrypt.compare(password, hashString);
 
     if (!passwordsMatch) {
       return { error: 'Correo electrónico o contraseña inválidos.' };

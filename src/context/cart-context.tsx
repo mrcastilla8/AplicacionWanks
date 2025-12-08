@@ -27,9 +27,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     try {
+      // Clear old cart format if exists
+      localStorage.removeItem('wankas-cart');
+
       const storedCart = localStorage.getItem('wankas-cart-v2');
       if (storedCart) {
-        setCartItems(JSON.parse(storedCart));
+        const parsedCart = JSON.parse(storedCart);
+        // Filter out items that don't have the new structure (variantId is required)
+        const validItems = Array.isArray(parsedCart)
+          ? parsedCart.filter((item: any) => item && item.variantId && item.productId && item.name)
+          : [];
+        setCartItems(validItems);
       }
     } catch (error) {
       console.error("Failed to load cart from localStorage", error);

@@ -28,38 +28,38 @@ export function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
+    if (password.trim() !== confirmPassword.trim()) {
       toast({ title: translations.common.error, description: translations.registerForm.passwordMismatch, variant: 'destructive' });
       return;
     }
     if (password.length < 6) {
-        toast({ title: translations.common.error, description: 'La contraseña debe tener al menos 6 caracteres.', variant: 'destructive' });
-        return;
+      toast({ title: translations.common.error, description: 'La contraseña debe tener al menos 6 caracteres.', variant: 'destructive' });
+      return;
     }
 
     setIsLoading(true);
 
     try {
-        const result = await registerUser({ name, email, password });
+      const result = await registerUser({ name, email, password });
 
-        if (result.error) {
-            toast({
-                title: translations.registerForm.dbErrorTitle,
-                description: result.error, // Use the user-friendly error from the server action
-                variant: 'destructive',
-            });
-        } else if (result.user) {
-            await login(result.user);
-            toast({ title: translations.registerForm.registrationSuccessTitle, description: translations.registerForm.registrationSuccessDesc });
-            router.push('/profile');
-        } else {
-            toast({ title: translations.common.error, description: translations.registerForm.dbErrorDefault, variant: 'destructive' });
-        }
-    } catch (error) {
-        console.error("Registration failed:", error);
+      if (result.error) {
+        toast({
+          title: translations.registerForm.dbErrorTitle,
+          description: result.error, // Use the user-friendly error from the server action
+          variant: 'destructive',
+        });
+      } else if (result.user) {
+        await login(result.user);
+        toast({ title: translations.registerForm.registrationSuccessTitle, description: translations.registerForm.registrationSuccessDesc });
+        router.push('/profile');
+      } else {
         toast({ title: translations.common.error, description: translations.registerForm.dbErrorDefault, variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error("Registration failed:", error);
+      toast({ title: translations.common.error, description: translations.registerForm.dbErrorDefault, variant: 'destructive' });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -67,7 +67,7 @@ export function RegisterForm() {
     <Card className="w-full max-w-md shadow-xl">
       <CardHeader className="text-center">
         <CardTitle className="font-headline text-3xl text-primary flex items-center justify-center">
-            <UserPlus className="mr-2 h-8 w-8" /> {translations.registerForm.title}
+          <UserPlus className="mr-2 h-8 w-8" /> {translations.registerForm.title}
         </CardTitle>
         <CardDescription>{translations.registerForm.description}</CardDescription>
       </CardHeader>

@@ -16,9 +16,8 @@ interface OracleProductRow {
 
 export async function GET() {
     try {
-        console.log('🔍 Consultando productos agrupados con variantes desde Oracle Cloud...');
+        console.log('Consultando productos agrupados con variantes desde Oracle Cloud...');
 
-        // Query to get products with their variants, grouped
         const result = await executeQuery<OracleProductRow>(
             `SELECT 
                 p.ID as PRODUCTO_ID,
@@ -44,27 +43,24 @@ export async function GET() {
             ORDER BY p.NOMBRE_ES, v.ID`
         );
 
-        console.log('📊 Resultado de productos:', {
+        console.log('Resultado de productos:', {
             hasRows: !!result.rows,
             rowCount: result.rows?.length || 0
         });
 
         if (!result.rows || result.rows.length === 0) {
-            console.warn('⚠️ No se encontraron productos en Oracle');
+            console.warn('No se encontraron productos en Oracle');
             return NextResponse.json([]);
         }
 
-        // Group variants by product
         const productsMap = new Map<number, ProductWithVariants>();
 
         for (const row of result.rows) {
             const productId = row.PRODUCTO_ID;
 
             if (!productsMap.has(productId)) {
-                // Get image URL, use placeholder if not available
                 const imageUrl = row.URL_PORTADA || 'https://placehold.co/600x400.png';
 
-                // Ensure all string fields are actually strings (LOB objects need conversion)
                 const productName = row.PRODUCTO_NOMBRE ? String(row.PRODUCTO_NOMBRE) : 'Producto sin nombre';
                 const productDesc = row.PRODUCTO_DESC ? String(row.PRODUCTO_DESC) : '';
                 const categoryName = row.CATEGORIA_NOMBRE ? String(row.CATEGORIA_NOMBRE) : 'Sin categoría';
@@ -79,7 +75,6 @@ export async function GET() {
                 });
             }
 
-            // Add variant to the product
             const product = productsMap.get(productId)!;
             const variantName = row.VARIANTE_NOMBRE ? String(row.VARIANTE_NOMBRE) : 'Unidad';
             product.variants.push({
@@ -92,12 +87,12 @@ export async function GET() {
 
         const products = Array.from(productsMap.values());
 
-        console.log(`✅ ${products.length} productos agrupados con variantes obtenidos de Oracle Cloud`);
+        console.log(`${products.length} productos agrupados con variantes obtenidos de Oracle Cloud`);
 
         return NextResponse.json(products);
 
     } catch (error: any) {
-        console.error('❌ Error al obtener productos de Oracle:', error);
+        console.error('Error al obtener productos de Oracle:', error);
         console.error('Error message:', error.message);
         console.error('Error code:', error.code);
 

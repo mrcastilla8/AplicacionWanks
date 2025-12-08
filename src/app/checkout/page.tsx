@@ -310,22 +310,29 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Código de cupón"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="h-9"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleApplyCoupon}
-                    disabled={isApplyingCoupon || !cartSyncId || !couponCode}
-                  >
-                    {isApplyingCoupon ? <Loader size={14} /> : 'Canjear'}
-                  </Button>
-                </div>
+                <>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Código de cupón"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      className="h-9"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleApplyCoupon}
+                      disabled={isApplyingCoupon || !cartSyncId || !couponCode.trim()}
+                    >
+                      {isApplyingCoupon ? <Loader size={14} /> : 'Canjear'}
+                    </Button>
+                  </div>
+                  {!cartSyncId && (
+                    <p className="text-xs text-amber-600 flex items-center gap-1">
+                      <Loader size={12} /> Sincronizando carrito...
+                    </p>
+                  )}
+                </>
               )}
             </div>
 

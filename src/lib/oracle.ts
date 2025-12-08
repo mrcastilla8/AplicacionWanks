@@ -2,34 +2,31 @@ import oracledb from 'oracledb';
 import path from 'path';
 import fs from 'fs';
 
-// Configuración de la conexión para Oracle Cloud Autonomous Database
 const walletDir = process.env.ORACLE_WALLET_DIR
     ? path.resolve(process.cwd(), process.env.ORACLE_WALLET_DIR)
     : undefined;
 
-// Inicializar Oracle Client en modo Thick si ORACLE_LIB_DIR está definido
 const libDir = process.env.ORACLE_LIB_DIR;
 if (libDir) {
     try {
         oracledb.initOracleClient({ libDir });
-        console.log(`✅ Oracle Client inicializado en modo Thick desde: ${libDir}`);
+        console.log(`Oracle Client inicializado en modo Thick desde: ${libDir}`);
     } catch (err: any) {
         if (err.message.includes('DPI-1047')) {
-            console.warn('⚠️ Oracle Client ya fue inicializado. Continuando...');
+            console.warn('Oracle Client ya fue inicializado. Continuando...');
         } else {
-            console.error('❌ Error al inicializar Oracle Client en modo Thick:', err);
+            console.error('Error al inicializar Oracle Client en modo Thick:', err);
             throw err;
         }
     }
 } else {
-    console.log('ℹ️ Usando modo Thin (sin Oracle Instant Client)');
+    console.log('Usando modo Thin (sin Oracle Instant Client)');
 }
 
-// Función para obtener el string de conexión completo desde tnsnames.ora
+
 function getConnectionString(alias: string | undefined, walletPath: string | undefined): string | undefined {
     if (!alias || !walletPath) return alias;
 
-    // Si ya parece un descriptor completo (empieza con (description=...), devolverlo tal cual
     if (alias.trim().toLowerCase().startsWith('(description')) {
         return alias;
     }
@@ -37,17 +34,16 @@ function getConnectionString(alias: string | undefined, walletPath: string | und
     try {
         const tnsPath = path.join(walletPath, 'tnsnames.ora');
         if (!fs.existsSync(tnsPath)) {
-            console.warn(`⚠️ No se encontró tnsnames.ora en ${walletPath}`);
+            console.warn(`No se encontró tnsnames.ora en ${walletPath}`);
             return alias;
         }
 
         const tnsContent = fs.readFileSync(tnsPath, 'utf-8');
-        // Buscar el alias. Formato: ALIAS = (DESCRIPTION...)
         const regex = new RegExp(`^\\s*${alias}\\s*=\\s*(.*)`, 'mi');
         const match = tnsContent.match(regex);
 
         if (match && match[1]) {
-            console.log(`✅ TNS Alias '${alias}' resuelto exitosamente desde tnsnames.ora`);
+            console.log(`TNS Alias '${alias}' resuelto exitosamente desde tnsnames.ora`);
             return match[1].trim();
         }
     } catch (err) {
@@ -63,10 +59,9 @@ const dbConfig: oracledb.PoolAttributes = {
     user: process.env.ORACLE_USER,
     password: process.env.ORACLE_PASSWORD,
     connectString: connectionString,
-    // Para Oracle Cloud Autonomous Database con wallet
     ...(walletDir && {
         walletLocation: walletDir,
-        walletPassword: '', // Auto-login wallet
+        walletPassword: '',
     }),
 };
 
@@ -75,9 +70,9 @@ let pool: oracledb.Pool | null = null;
 export async function getOracleConnection() {
     if (!pool) {
         try {
-            console.log('🔧 Configuración de Oracle:', {
+            console.log('Configuración de Oracle:', {
                 user: dbConfig.user,
-                connectString: dbConfig.connectString?.substring(0, 50) + '...', // Log parcial por seguridad
+                connectString: dbConfig.connectString?.substring(0, 50) + '...',
                 walletLocation: walletDir,
                 mode: libDir ? 'Thick' : 'Thin',
             });
@@ -88,9 +83,9 @@ export async function getOracleConnection() {
                 poolMax: 4,
                 poolIncrement: 1,
             });
-            console.log('✅ Pool de conexiones a Oracle creado exitosamente.');
+            console.log('Pool de conexiones a Oracle creado exitosamente.');
         } catch (err: any) {
-            console.error('❌ Error al crear el pool de conexiones a Oracle:');
+            console.error('Error al crear el pool de conexiones a Oracle:');
             console.error('Error name:', err.name);
             console.error('Error message:', err.message);
             console.error('Error code:', err.code);
@@ -103,7 +98,7 @@ export async function getOracleConnection() {
         const connection = await pool.getConnection();
         return connection;
     } catch (err) {
-        console.error('❌ Error al obtener una conexión del pool:', err);
+        console.error('Error al obtener una conexión del pool:', err);
         throw err;
     }
 }
@@ -120,7 +115,6 @@ export async function closeOraclePool() {
     }
 }
 
-// Helper para ejecutar consultas simples
 export async function executeQuery<T = any>(
     sql: string,
     binds: oracledb.BindParameters = [],
@@ -129,11 +123,9 @@ export async function executeQuery<T = any>(
     let connection;
     try {
         connection = await getOracleConnection();
-        // Por defecto, devolver resultados como objetos (clave-valor) en lugar de arrays
         const opts: any = {
             outFormat: oracledb.OUT_FORMAT_OBJECT,
             autoCommit: true,
-            // Automatically fetch CLOBs as strings instead of LOB objects
             fetchAsString: [oracledb.CLOB, oracledb.NCLOB],
             ...options
         };
@@ -141,7 +133,7 @@ export async function executeQuery<T = any>(
         const result = await connection.execute<T>(sql, binds, opts);
         return result;
     } catch (err) {
-        console.error('❌ Error ejecutando query:', sql, err);
+        console.error('Error ejecutando query:', sql, err);
         throw err;
     } finally {
         if (connection) {
